@@ -8,7 +8,7 @@ gemucator is short for "Genbank Mutation Locator". It is a simple Python3 class 
 
 The package comes with a simple script called `gemucator-run.py` that shows how it works. All these examples are for TB.
 
-First, let's see what happens when we give it an amino acid mutation (which has to be, be definition, in the coding sequence of a gene).
+First, let's see what happens when we give it an amino acid mutation (which has to be, be definition, in the coding sequence of a gene). Note - the below positions are 0-indexed, which is the normal python way of doing things. To convert this to a genome position for e.g. Artemis or another genome browser, you should add 1.
 
 ```
 > gemucator-run.py --mutation rpoB_S450L
@@ -63,7 +63,7 @@ AssertionError: x is not a nucleotide!
 ```
 Note that mutation->location->mutation is not uniquely defined for some 'promoters' i.e. the promoter for gene X may lie within the coding region of gene Y which makes assigning it as a CDS mutation or a PROM mutation difficult.
 
-Finally, it will parse insertions and deletions as long as they conform to the format like in the example below.
+it will parse insertions and deletions as long as they conform to the format like in the example below.
 
 ```
 > gemucator-run.py --mutation rpoB_1300_ins
