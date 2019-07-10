@@ -63,7 +63,7 @@ AssertionError: x is not a nucleotide!
 ```
 Note that mutation->location->mutation is not uniquely defined for some 'promoters' i.e. the promoter for gene X may lie within the coding region of gene Y which makes assigning it as a CDS mutation or a PROM mutation difficult.
 
-it will parse insertions and deletions as long as they conform to the format like in the example below.
+It will also parse insertions and deletions as long as they conform to the format like in the example below.
 
 ```
 > gemucator-run.py --mutation rpoB_1300_ins
@@ -72,6 +72,13 @@ rpoB_1300_ins:
 ```
 
 This means an insertion (`ins`) of any length at nucleotide `1300` in the coding sequence of the `rpoB` gene. You can add the a positive integer to be specific about the number of bases inserted (e.g. `rpoB_1300_ins_2`) or you can be highly specific and state which bases are inserted (e.g. `rpoB_1300_ins_ac`). Likewise, for a deletion replace `ins` with `del`, although here it is superfluous to state which bases are deleted.
+
+Finally, you can get the amino acid changes (if any) associated with particular nucleotide substitutions.
+
+```
+> gemucator-run.py --nucleotide_substitution C761155T
+rpoB S450L
+```
 
 ## The gemucator class
 
