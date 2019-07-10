@@ -537,7 +537,7 @@ class gemucator(object):
         
         assert alt_nucleotide in ['A', 'T', 'C', 'G'], "Last character of the nucleotide substitution is not a nucleotide"
         
-        assert int(nucleotide_substitution[1:-1]), "Nucleotide substituion has to be in the format A779188C"
+        assert int(nucleotide_substitution[1:-1]), "Nucleotide substituion has to be in the format C761155T"
 
         location = int(nucleotide_substitution[1:-1])
 
@@ -565,7 +565,7 @@ class gemucator(object):
         alt_genome.seq[location - 1] = alt_nucleotide
         # convet back to normal immutable seq, as otherwise translate method later doesnt work
         alt_genome.seq = alt_genome.seq.toseq()
-        print(alt_genome.seq[761154])
+        # print(alt_genome.seq[761154])
 
         # we need to get the sequence of the CDS which has a gene name or locus tag matching gene_name
         for record in self.genome.features:
@@ -603,13 +603,10 @@ class gemucator(object):
                             ref_protein = ref_coding_nucleotides.reverse_complement().seq.translate()
                             alt_protein = alt_coding_nucleotides.reverse_complement().seq.translate()
 
+        # just double check that residue is the same as the target position in the ref protein
         assert residue == ref_protein[position - 1] 
 
         return gene_name, residue, position, alt_protein[position - 1]
-        '''
-        for i, (r, a) in enumerate(zip(ref_protein, alt_protein)):
-            if r != a:
-                print(r + str(i + 1) + a)
-        '''
+
 
 
