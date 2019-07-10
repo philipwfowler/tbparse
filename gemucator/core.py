@@ -1,8 +1,9 @@
 #! /usr/bin/env python
 
 import pkg_resources, re
-
 from Bio import SeqIO
+from Bio.Seq import Seq
+from copy import deepcopy
 
 class gemucator(object):
 
@@ -419,6 +420,7 @@ class gemucator(object):
             gene_name (str) the name of the name, if relevant, e.g. "katG"
             residue or base (str) e.g. "A" or "a"
             position (int)
+
         '''
 
         assert int(location)>0, "genomic position has to be a positive integer"
@@ -512,3 +514,99 @@ class gemucator(object):
                     return(gene_name,residue,position)
 
         return(None,None,None)
+
+    def interpret_substitution(self, nucleotide_substitution):
+        '''
+        What is what is the effect of the supplied nucleotide substitution in the genome defined by the genbank file? 
+
+        Args:
+            nucleotide_substitution (str) nucleotide position and substitution, e.g. A779188C
+
+        Returns:
+            gene_name (str) the name of the name, if relevant, e.g. "katG"
+            residue (str) amino acid residue in the reference genome
+            position (int) position of the amino acid in the protein
+            alt_residue (str) modified amino acid (or same amino acid if synonymous)
+        '''
+
+        reference_nucleotide = nucleotide_substitution[0]
+
+        alt_nucleotide = nucleotide_substitution[-1]
+
+        assert reference_nucleotide in ['A', 'T', 'C', 'G'], "First character of the nucleotide substitution is not a nucleotide"
+        
+        assert alt_nucleotide in ['A', 'T', 'C', 'G'], "Last character of the nucleotide substitution is not a nucleotide"
+        
+        assert int(nucleotide_substitution[1:-1]), "Nucleotide substituion has to be in the format C761155T"
+
+        location = int(nucleotide_substitution[1:-1])
+
+        # use existing code in self.identify_gene() to identify the relevant gene
+        # considered modifying that function to optionally return sequence, but this seemed like the lighter touch option, if more repetitive
+        # promoter_length set to 0 as dont care about promoter for this, since interested in CDS SNPs only
+        gene_name, residue, position = self.identify_gene(location, promoter_length = 0)
+
+        if gene_name is None:
+
+            print('%s is intergenic' % nucleotide_substitution)
+
+            return None, None, None, None
+
+        # since we are given the position of the mutation in context of the whole reference seq, 
+        # makes sense to just modify based on position in the whole sequence
+        # therefore, we first take a deepcopy (use deepcopy to prevent any confusion between the two pointers)
+        alt_genome = deepcopy(self.genome)
+
+        # check that ref position is as expected
+        assert alt_genome.seq[location - 1] == reference_nucleotide
+        # convert the alt_genome.seq to a mutable biopython seq http://www.csc.kth.se/utbildning/kth/kurser/DD2397/appbio09/docs/BioPython.pdf
+        alt_genome.seq = alt_genome.seq.tomutable()
+        # modify the sequence
+        alt_genome.seq[location - 1] = alt_nucleotide
+        # convet back to normal immutable seq, as otherwise translate method later doesnt work
+        alt_genome.seq = alt_genome.seq.toseq()
+        # print(alt_genome.seq[761154])
+
+        # we need to get the sequence of the CDS which has a gene name or locus tag matching gene_name
+        for record in self.genome.features:
+
+            # check that the record is a Coding Sequence
+            if record.type in ['CDS','rRNA']:
+
+                start=record.location.start.position
+                end=record.location.end.position
+                strand=record.location.strand.real
+
+                if 'gene' in record.qualifiers.keys():
+
+                    if gene_name == record.qualifiers['gene'][0]:
+
+                        ref_coding_nucleotides=self.genome[start:end]
+                        alt_coding_nucleotides = alt_genome[start:end]
+                        if strand == 1:
+                            ref_protein = ref_coding_nucleotides.seq.translate()
+                            alt_protein = alt_coding_nucleotides.seq.translate()
+                        elif strand == -1:
+                            ref_protein = ref_coding_nucleotides.reverse_complement().seq.translate()
+                            alt_protein = alt_coding_nucleotides.reverse_complement().seq.translate()
+
+                elif 'locus_tag' in record.qualifiers.keys():
+
+                    if gene_name == record.qualifiers['locus_tag'][0]:
+
+                        ref_coding_nucleotides=self.genome[start:end]
+                        alt_coding_nucleotides = alt_genome[start:end]
+                        if strand == 1:
+                            ref_protein = ref_coding_nucleotides.seq.translate()
+                            alt_protein = alt_coding_nucleotides.seq.translate()
+                        elif strand == -1:
+                            ref_protein = ref_coding_nucleotides.reverse_complement().seq.translate()
+                            alt_protein = alt_coding_nucleotides.reverse_complement().seq.translate()
+
+        # just double check that residue is the same as the target position in the ref protein
+        assert residue == ref_protein[position - 1] 
+
+        return gene_name, residue, position, alt_protein[position - 1]
+
+
+

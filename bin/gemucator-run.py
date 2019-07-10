@@ -9,6 +9,7 @@ if __name__ == "__main__":
     parser.add_argument("--mutation",help="the full length mutation to locate on the genome e.g. rpoB_S450L")
     parser.add_argument("--nucleotide",action='store_true',help="overrides the logic and forces the code to treat this mutation as a simple nucleotide mutation. Useful for RNA genes.")
     parser.add_argument("--location",type=int,help="the genome position we want to find the gene for")
+    parser.add_argument("--nucleotide_substitution",help="Input is a nucleotide position and substitution, e.g. A779188C, output is either \'non-genic\' ot the resulting amino acid change (or lack thereof)")
     parser.add_argument("--promoter_length",type=int,default=100,help="the number of bases upstream of a gene that we will consider to form the promoter")
     parser.add_argument("--genbank_file",help="the path to the reference GenBank file we want to work with. If not specified, the code will load H37rV.gbk from its config/ folder.")
     options = parser.parse_args()
@@ -41,5 +42,13 @@ if __name__ == "__main__":
 
             print("Cannot find a gene or plausible promoter for location "+str(options.location))
 
+    elif options.nucleotide_substitution:
+        # no promoter length given as only interested in positions in CDS
+        gene, residue, position, alt_residue = reference_genome.interpret_substitution(options.nucleotide_substitution)
+        
+        if gene is not None:
+
+            print('%s %s%s%s' % (gene, residue, position, alt_residue))
+
     else:
-        raise Exception("Must specify one of --mutation or --location!")
+        raise Exception("Must specify one of --mutation or --location or --nucleotide_substitution!")
